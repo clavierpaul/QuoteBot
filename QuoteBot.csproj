@@ -7,4 +7,19 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01111" />
+      <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0-nightly-01111" />
+      <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01111" />
+      <PackageReference Include="MongoDB.Bson" Version="2.15.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.15.0" />
+      <PackageReference Include="YamlDotNet" Version="11.2.1" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="config.yml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
 </Project>
