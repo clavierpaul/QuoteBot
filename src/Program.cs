@@ -19,10 +19,9 @@ var discordClient = new DiscordClient(new DiscordConfiguration
     Token = config.Token
 });
 
-var mongoClient = new MongoClient(config.ConnectionString);
-
 var services = new ServiceCollection()
-    .AddSingleton<IMongoClient>(mongoClient);
+    .AddSingleton<IMongoClient>(_ => new MongoClient(config.ConnectionString))
+    .AddScoped<QuoteService>();
 
 var slash = discordClient.UseSlashCommands(new SlashCommandsConfiguration
 {
@@ -44,6 +43,13 @@ discordClient.Ready += (sender, eventArgs) =>
 slash.SlashCommandErrored += (sender, eventArgs) =>
 {
     sender.Client.Logger.LogError("Error while executing command: {}", eventArgs.Exception);
+
+    return Task.CompletedTask;
+};
+
+slash.AutocompleteErrored += (sender, eventArgs) =>
+{
+    sender.Client.Logger.LogError("Error while autocompleting command: {}", eventArgs.Exception);
 
     return Task.CompletedTask;
 };
