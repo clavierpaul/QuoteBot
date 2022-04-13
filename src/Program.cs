@@ -1,5 +1,4 @@
-﻿using BinaryTree;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,8 +19,10 @@ var discordClient = new DiscordClient(new DiscordConfiguration
     Token = config.Token
 });
 
+var mongoClient = new MongoClient(config.ConnectionString);
+
 var services = new ServiceCollection()
-    .AddSingleton<IMongoClient>(_ => new MongoClient(config.ConnectionString))
+    .AddSingleton<IMongoClient>(_ => mongoClient)
     .AddScoped<QuoteService>();
 
 var slash = discordClient.UseSlashCommands(new SlashCommandsConfiguration
@@ -34,6 +35,8 @@ slash.RegisterCommands<Commands>(config.TestServer!);
 #else
 slash.RegisterCommands<Commands>();
 #endif
+
+AuthorCache.Initialize(mongoClient.GetDatabase("quoteBot").GetCollection<Quote>("quotes"), discordClient.Logger);
 
 discordClient.Ready += (sender, eventArgs) =>
 {
@@ -54,13 +57,6 @@ slash.AutocompleteErrored += (sender, eventArgs) =>
 
     return Task.CompletedTask;
 };
-
-var tree = new BinaryTree<string>(new [] {"Bence", "bence", "beast", "bees", "adam"});
-
-foreach (var author in tree.AllMatches("be"))
-{
-    Console.WriteLine(author);
-}
 
 await discordClient.ConnectAsync();
 await Task.Delay(-1);

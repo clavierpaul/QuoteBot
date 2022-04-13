@@ -3,6 +3,34 @@ using DSharpPlus.SlashCommands;
 
 namespace QuoteBot;
 
+public class AuthorCompletionStrict : IAutocompleteProvider
+{
+    public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
+    {
+        var matches = AuthorCache.GetPrefixMatches(ctx.Guild.Id, ctx.OptionValue.ToString()!);
+        
+        return Task.FromResult(matches.Select(m => new DiscordAutoCompleteChoice(m, m)));
+    }
+}
+
+public class AuthorCompletion : IAutocompleteProvider
+{
+    public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
+    {
+        var results = new List<DiscordAutoCompleteChoice>();
+        
+        var search = ctx.OptionValue.ToString()!;
+
+        results.Add(search != ""
+            ? new DiscordAutoCompleteChoice(search, ctx.OptionValue)
+            : new DiscordAutoCompleteChoice("<none>", ""));
+
+        results.AddRange(AuthorCache.GetPrefixMatches(ctx.Guild.Id, search).Select(result => new DiscordAutoCompleteChoice(result, result)));
+
+        return Task.FromResult(results.AsEnumerable());
+    }
+}
+
 public abstract class QuoteCommandGroup : ApplicationCommandModule
 {
     protected readonly QuoteService _quoteService;
@@ -55,7 +83,9 @@ public class Commands : QuoteCommandGroup
         [SlashCommand("text", "Add a text quote")]
         public async Task AddTextQuote(InteractionContext ctx, 
             [Option("quote", "Body of the quote")] string body,
-            [Option("author", "Author of the quote")] string author = "",
+            [Option("author", "Author of the quote")] 
+            [Autocomplete(typeof(AuthorCompletion))]
+            string author = "",
             [Option("name", "Quote name")] string name = "")
         {
             // If the body has quotes at the start and end because someone didn't understand how the bot worked, remove them
@@ -71,7 +101,9 @@ public class Commands : QuoteCommandGroup
         [SlashCommand("url", "Add an image quote from a link")]
         public async Task AddImageQuoteFromLink(InteractionContext ctx, 
             [Option("url", "Link to the image")] string link,
-            [Option("author", "Author of the quote")] string author = "",
+            [Option("author", "Author of the quote")]
+            [Autocomplete(typeof(AuthorCompletion))]
+            string author = "",
             [Option("name", "Quote name")] string name = "")
         {
             var quote = await _quoteService.AddImageQuoteAsync(ctx.Guild.Id, link, author, name);
@@ -81,7 +113,9 @@ public class Commands : QuoteCommandGroup
         [SlashCommand("file", "Add an image quote from a file")]
         public async Task AddImageQuoteFromFile(InteractionContext ctx, 
             [Option("file", "File to the image")] DiscordAttachment file,
-            [Option("author", "Author of the quote")] string author = "",
+            [Option("author", "Author of the quote")]
+            [Autocomplete(typeof(AuthorCompletion))]
+            string author = "",
             [Option("name", "Quote name")] string name = "")
         {
             await ctx.CreateResponseAsync("Not implemented.");

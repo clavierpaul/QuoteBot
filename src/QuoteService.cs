@@ -71,6 +71,9 @@ public class QuoteService
         };
         
         await _quoteCollection.InsertOneAsync(quote);
+        
+        if (author != null && !AuthorCache.Contains(serverId, author))
+            AuthorCache.AddAuthor(serverId, author);
 
         return quote;
     }
@@ -126,7 +129,21 @@ public class QuoteService
     /// <returns>If the quote exists</returns>
     public async Task<bool> TryDeleteQuoteAsync(ulong serverId, string quoteId)
     {
+        // Get quote for author lookup
+        var quote = await _quoteCollection.AsQueryable().FirstOrDefaultAsync(q => q.ServerId == serverId && q.QuoteId == quoteId);
+        
         var result = await _quoteCollection.DeleteOneAsync(q => q.ServerId == serverId && q.QuoteId == quoteId);
-        return result.DeletedCount > 0;
+        if (result.DeletedCount == 0)
+            return false;
+        
+        // If all quotes by the author are now gone, remove from cache
+        if (quote.Author == "")
+            return true;
+        
+        var author = await _quoteCollection.AsQueryable().Where(q => q.ServerId == serverId && q.Author == quote.Author).ToListAsync();
+        if (author.Count == 0)
+            AuthorCache.RemoveAuthor(serverId, quoteId);
+        
+        return true;
     }    
 }
