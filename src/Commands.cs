@@ -18,14 +18,18 @@ public class AuthorCompletion : IAutocompleteProvider
     public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
     {
         var results = new List<DiscordAutoCompleteChoice>();
+        var matches = AuthorCache.GetPrefixMatches(ctx.Guild.Id, ctx.OptionValue.ToString()!).ToList();
         
         var search = ctx.OptionValue.ToString()!;
 
-        results.Add(search != ""
-            ? new DiscordAutoCompleteChoice(search, ctx.OptionValue)
-            : new DiscordAutoCompleteChoice("<none>", ""));
+        if (!matches.Contains(search))
+        {
+            results.Add(search != ""
+                ? new DiscordAutoCompleteChoice(search, ctx.OptionValue)
+                : new DiscordAutoCompleteChoice("<none>", ""));
+        }
 
-        results.AddRange(AuthorCache.GetPrefixMatches(ctx.Guild.Id, search).Select(result => new DiscordAutoCompleteChoice(result, result)));
+        results.AddRange(matches.Select(result => new DiscordAutoCompleteChoice(result, result)));
 
         return Task.FromResult(results.AsEnumerable());
     }
@@ -43,13 +47,11 @@ public abstract class QuoteCommandGroup : ApplicationCommandModule
         {
             case QuoteType.Text:
                 embedBuilder.WithDescription(quote.Body);
-                embedBuilder.WithAuthor(quote.Author != "" ? $"Quote by {quote.Author}" : "Quote");
+                embedBuilder.WithAuthor(quote.Author != "" ? quote.Author : "Quote", iconUrl: "https://i.imgur.com/mSTMLkl.png");
                 break;
             case QuoteType.Image:
                 embedBuilder.WithImageUrl(quote.Body);
-                if (quote.Author != "")
-                    embedBuilder.WithAuthor($"Quote by {quote.Author}");
-                
+                embedBuilder.WithAuthor(quote.Author != "" ? quote.Author : "Image", iconUrl: "https://i.imgur.com/mSTMLkl.png");
                 break;
             default:
                 throw new ArgumentOutOfRangeException($"Invalid quote type {quote.Type}");
