@@ -57,7 +57,8 @@ public class QuoteService
         do
         {
             id = CreateRandomAlphaId();
-        } while (await _quoteCollection.AsQueryable().AnyAsync(q => q.ServerId == serverId && q.QuoteId == id));
+        } 
+        while (await _quoteCollection.AsQueryable().AnyAsync(q => q.ServerId == serverId && q.QuoteId == id));
         
         var quote = new Quote
         {
@@ -78,7 +79,7 @@ public class QuoteService
     /// Adds a text quote to the database and returns the new quote object
     /// </summary>
     /// <param name="serverId">Discord server to associate with the quote</param>
-    /// <param name="body">Quote body, whether text or a link to an image</param>
+    /// <param name="body">Quote text</param>
     /// <param name="author">Author of the quote, optional</param>
     /// <param name="name">Lookup name for the quote, optional</param>
     /// <returns>The created quote object</returns>
@@ -91,15 +92,14 @@ public class QuoteService
     /// Adds a quote to the database and returns the new quote object
     /// </summary>
     /// <param name="serverId">Discord server to associate with the quote</param>
-    /// <param name="type">Whether the quote is text or an image</param>
-    /// <param name="body">Quote body, whether text or a link to an image</param>
+    /// <param name="url">Link to the image</param>
     /// <param name="author">Author of the quote, optional</param>
     /// <param name="name">Lookup name for the quote, optional</param>
     /// <param name="isFile">Whether the image is a file that needs to be hosted or not</param>
     /// <returns>The created quote object</returns>
-    public async Task<Quote> AddImageQuoteAsync(ulong serverId, string body, string? author, string? name, bool isFile = false)
+    public async Task<Quote> AddImageQuoteAsync(ulong serverId, string url, string? author, string? name, bool isFile = false)
     {
-        return await AddQuoteAsync(serverId, QuoteType.Image, body, author, name);
+        return await AddQuoteAsync(serverId, QuoteType.Image, url, author, name);
     }
     
     /// <summary>
@@ -117,4 +117,16 @@ public class QuoteService
         
         return quotes[_random.Value!.Next(quotes.Count)];
     }
+
+    /// <summary>
+    /// Attempts to the delete a quote by its ID
+    /// </summary>
+    /// <param name="serverId">Discord server the quote is from</param>
+    /// <param name="quoteId">The ID of the quote</param>
+    /// <returns>If the quote exists</returns>
+    public async Task<bool> TryDeleteQuoteAsync(ulong serverId, string quoteId)
+    {
+        var result = await _quoteCollection.DeleteOneAsync(q => q.ServerId == serverId && q.QuoteId == quoteId);
+        return result.DeletedCount > 0;
+    }    
 }

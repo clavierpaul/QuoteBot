@@ -10,10 +10,23 @@ public abstract class QuoteCommandGroup : ApplicationCommandModule
     protected static DiscordEmbed CreateQuoteEmbed(Quote quote)
     {
         var embedBuilder = new DiscordEmbedBuilder();
-        embedBuilder.WithAuthor(quote.Author != "" ? $"Quote by {quote.Author}" : "Quote");
-        
 
-        embedBuilder.WithDescription(quote.Body);
+        switch (quote.Type)
+        {
+            case QuoteType.Text:
+                embedBuilder.WithDescription(quote.Body);
+                embedBuilder.WithAuthor(quote.Author != "" ? $"Quote by {quote.Author}" : "Quote");
+                break;
+            case QuoteType.Image:
+                embedBuilder.WithImageUrl(quote.Body);
+                if (quote.Author != "")
+                    embedBuilder.WithAuthor($"Quote by {quote.Author}");
+                
+                break;
+            default:
+                throw new ArgumentOutOfRangeException($"Invalid quote type {quote.Type}");
+        }
+        
         embedBuilder.WithColor(new DiscordColor("#3199d8"));
         embedBuilder.WithFooter($"id: {quote.QuoteId}");
         
@@ -54,6 +67,38 @@ public class Commands : QuoteCommandGroup
             var quote = await _quoteService.AddTextQuoteAsync(ctx.Guild.Id, body, author, name);
             await ctx.CreateResponseAsync("Quote added!", CreateQuoteEmbed(quote));
         }
+        
+        [SlashCommand("url", "Add an image quote from a link")]
+        public async Task AddImageQuoteFromLink(InteractionContext ctx, 
+            [Option("url", "Link to the image")] string link,
+            [Option("author", "Author of the quote")] string author = "",
+            [Option("name", "Quote name")] string name = "")
+        {
+            var quote = await _quoteService.AddImageQuoteAsync(ctx.Guild.Id, link, author, name);
+            await ctx.CreateResponseAsync("Quote added!", CreateQuoteEmbed(quote));
+        }
+        
+        [SlashCommand("file", "Add an image quote from a file")]
+        public async Task AddImageQuoteFromFile(InteractionContext ctx, 
+            [Option("file", "File to the image")] DiscordAttachment file,
+            [Option("author", "Author of the quote")] string author = "",
+            [Option("name", "Quote name")] string name = "")
+        {
+            await ctx.CreateResponseAsync("Not implemented.");
+        }
+    }
+
+    [SlashCommand("deletequote", "Remove a quote from the database")]
+    public async Task DeleteQuote(InteractionContext ctx, [Option("id", "ID of the quote")] string quoteId)
+    {
+        if (await _quoteService.TryDeleteQuoteAsync(ctx.Guild.Id, quoteId))
+        {
+            await ctx.CreateResponseAsync(":wastebasket:  Quote deleted!");
+        }
+        else
+        {
+            await ctx.CreateResponseAsync($":x:  No quote by `{quoteId}` found.", true);
+        }
     }
     
     [SlashCommand("quote", "Get a random quote")]
@@ -66,7 +111,7 @@ public class Commands : QuoteCommandGroup
         } 
         catch (NoQuotesFoundException)
         {
-            await ctx.CreateResponseAsync("No quotes found!");
+            await ctx.CreateResponseAsync(":x:  No quotes found!");
         }
     }
 }

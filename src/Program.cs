@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using BinaryTree;
+using DSharpPlus;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -53,6 +54,13 @@ slash.AutocompleteErrored += (sender, eventArgs) =>
 
     return Task.CompletedTask;
 };
+
+var tree = new BinaryTree<string>(new [] {"Bence", "bence", "beast", "bees", "adam"});
+
+foreach (var author in tree.AllMatches("be"))
+{
+    Console.WriteLine(author);
+}
 
 await discordClient.ConnectAsync();
 await Task.Delay(-1);
