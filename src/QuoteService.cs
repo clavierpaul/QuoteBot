@@ -1,6 +1,5 @@
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using System.Linq;
 
 namespace QuoteBot;
 

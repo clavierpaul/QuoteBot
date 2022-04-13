@@ -134,7 +134,7 @@ public static class AuthorCache
                 return results;
 
             var prefixFound = false;
-            foreach (var author in Authors[serverId].TakeWhile(author => results.Count != limit))
+            foreach (var author in Authors[serverId].TakeWhile(_ => results.Count != limit))
             {
                 if (author.StartsWith(value, StringComparison.OrdinalIgnoreCase))
                 {
