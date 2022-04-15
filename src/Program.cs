@@ -3,7 +3,7 @@ using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
-using QuoteBot;
+using QuoteBot.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -22,8 +22,12 @@ var discordClient = new DiscordClient(new DiscordConfiguration
 var mongoClient = new MongoClient(config.ConnectionString);
 
 var services = new ServiceCollection()
+    .AddSingleton(config)
     .AddSingleton<IMongoClient>(_ => mongoClient)
+    .AddScoped<UploadService>()
     .AddScoped<QuoteService>();
+
+services.AddHttpClient<UploadService>();
 
 var slash = discordClient.UseSlashCommands(new SlashCommandsConfiguration
 {

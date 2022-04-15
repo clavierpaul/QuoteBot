@@ -1,13 +1,14 @@
 using JetBrains.Annotations;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace QuoteBot;
+namespace QuoteBot.Services;
 
 public class Config
 {
     public string Token { get; [UsedImplicitly] init; } = null!;
     public ulong? TestServer { get; [UsedImplicitly] init; }
     public string ConnectionString { get; [UsedImplicitly] init; } = null!;
+    public ulong UploadChannel { get; [UsedImplicitly] init; }
 }
 
 public enum QuoteType

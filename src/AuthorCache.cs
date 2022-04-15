@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
-namespace QuoteBot;
+namespace QuoteBot.Services;
 
 public static class AuthorCache
 {

@@ -1,7 +1,7 @@
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace QuoteBot;
+namespace QuoteBot.Services;
 
 public class NoQuotesFoundException : Exception
 {
@@ -83,11 +83,10 @@ public class QuoteService
     /// <param name="serverId">Discord server to associate with the quote</param>
     /// <param name="body">Quote text</param>
     /// <param name="author">Author of the quote, optional</param>
-    /// <param name="name">Lookup name for the quote, optional</param>
     /// <returns>The created quote object</returns>
-    public async Task<Quote> AddTextQuoteAsync(ulong serverId, string body, string? author, string? name)
+    public async Task<Quote> AddTextQuoteAsync(ulong serverId, string body, string? author)
     {
-        return await AddQuoteAsync(serverId, QuoteType.Text, body, author, name);
+        return await AddQuoteAsync(serverId, QuoteType.Text, body, author, null);
     }
     
     /// <summary>
@@ -96,12 +95,54 @@ public class QuoteService
     /// <param name="serverId">Discord server to associate with the quote</param>
     /// <param name="url">Link to the image</param>
     /// <param name="author">Author of the quote, optional</param>
-    /// <param name="name">Lookup name for the quote, optional</param>
-    /// <param name="isFile">Whether the image is a file that needs to be hosted or not</param>
     /// <returns>The created quote object</returns>
-    public async Task<Quote> AddImageQuoteAsync(ulong serverId, string url, string? author, string? name, bool isFile = false)
+    public async Task<Quote> AddImageQuoteAsync(ulong serverId, string url, string? author)
     {
-        return await AddQuoteAsync(serverId, QuoteType.Image, url, author, name);
+        return await AddQuoteAsync(serverId, QuoteType.Image, url, author, null);
+    }
+
+    /// <summary>
+    /// Gets a quote by its unique name
+    /// </summary>
+    /// <param name="serverId">Discord server to retrieve from</param>
+    /// <param name="name">Name of the quote</param>
+    /// <returns>The quote object, or null if not found</returns>
+    public async Task<Quote?> GetQuoteByNameAsync(ulong serverId, string name)
+    {
+        var value = await _quoteCollection.AsQueryable().FirstOrDefaultAsync(q => q.ServerId == serverId && q.Name == name);
+        return value;
+    }
+
+    /// <summary>
+    /// Tries to add a named text quote
+    /// </summary>
+    /// <param name="serverId">Discord server to associate with the quote</param>
+    /// <param name="body">Quote text</param>
+    /// <param name="author">Author of the quote, optional</param>
+    /// <param name="name">Name of the quote</param>
+    /// <returns>The quote object and true if no quote with that name already existed, otherwise null and false</returns>
+    public async Task<(Quote? quote, bool Success)> TryAddNamedTextQuoteAsync(ulong serverId, string body,
+        string? author, string name)
+    {
+        return await GetQuoteByNameAsync(serverId, name) != null 
+            ? (null, false) 
+            : (await AddQuoteAsync(serverId, QuoteType.Text, body, author, name), true);
+    }
+    
+    /// <summary>
+    /// Tries to add a named text quote
+    /// </summary>
+    /// <param name="serverId">Discord server to associate with the quote</param>
+    /// <param name="url">Link to the image</param>
+    /// <param name="author">Author of the quote, optional</param>
+    /// <param name="name">Name of the quote</param>
+    /// <returns>The quote object and true if no quote with that name already existed, otherwise null and false</returns>
+    public async Task<(Quote? quote, bool Success)> TryAddNamedImageQuoteAsync(ulong serverId, string url,
+        string? author, string name)
+    {
+        return await GetQuoteByNameAsync(serverId, name) != null 
+            ? (null, false) 
+            : (await AddQuoteAsync(serverId, QuoteType.Image, url, author, name), true);
     }
     
     /// <summary>
@@ -118,6 +159,21 @@ public class QuoteService
             throw new NoQuotesFoundException();
         
         return quotes[_random.Value!.Next(quotes.Count)];
+    }
+
+    /// <summary>
+    /// Returns a random server quote from an author
+    /// </summary>
+    /// <param name="serverId">Discord server to take quotes from</param>
+    /// <param name="author">Author to search for</param>
+    /// <returns>A random quote or null if the author was not found</returns>
+    public async Task<Quote?> GetRandomQuoteByAuthorAsync(ulong serverId, string author)
+    {
+        var quotes = await _quoteCollection.AsQueryable().Where(q => q.ServerId == serverId && q.Author == author).ToListAsync();
+        
+        return quotes.Count == 0 
+            ? null 
+            : quotes[_random.Value!.Next(quotes.Count)];
     }
 
     /// <summary>
