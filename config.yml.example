@@ -1,3 +1,4 @@
-token: "token here"
-testServer: <id>
-connectionString: "string here"
+token: <discord-token>
+testServer: [id]
+connectionString: <mongo-string>
+uploadChannel: <id>
