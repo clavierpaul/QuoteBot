@@ -130,7 +130,7 @@ public class QuoteService
     }
     
     /// <summary>
-    /// Tries to add a named text quote
+    /// Tries to add a named image quote
     /// </summary>
     /// <param name="serverId">Discord server to associate with the quote</param>
     /// <param name="url">Link to the image</param>
@@ -146,7 +146,7 @@ public class QuoteService
     }
     
     /// <summary>
-    /// Returns a random server quote
+    /// Gets a random server quote
     /// </summary>
     /// <param name="serverId">Discord server to take quotes from</param>
     /// <returns>A random quote</returns>
@@ -162,7 +162,7 @@ public class QuoteService
     }
     
     /// <summary>
-    /// Get all text quotes for a server
+    /// Gets all text quotes for a server
     /// </summary>
     /// <param name="serverId">Discord server to list quotes for</param>
     /// <returns>A list of all text quotes</returns>
@@ -172,7 +172,7 @@ public class QuoteService
     }
     
     /// <summary>
-    /// Get all image quotes for a server
+    /// Gets all image quotes for a server
     /// </summary>
     /// <param name="serverId">Discord server to list quotes for</param>
     /// <returns>A list of all image quotes</returns>
@@ -182,18 +182,29 @@ public class QuoteService
     }
 
     /// <summary>
-    /// Returns a random server quote from an author
+    /// Gets a random server quote from an author
     /// </summary>
     /// <param name="serverId">Discord server to take quotes from</param>
     /// <param name="author">Author to search for</param>
     /// <returns>A random quote or null if the author was not found</returns>
     public async Task<Quote?> GetRandomQuoteByAuthorAsync(ulong serverId, string author)
     {
-        var quotes = await _quoteCollection.AsQueryable().Where(q => q.ServerId == serverId && q.Author == author).ToListAsync();
+        var quotes = await GetQuotesByAuthorAsync(serverId, author);
         
         return quotes.Count == 0 
             ? null 
             : quotes[_random.Value!.Next(quotes.Count)];
+    }
+    
+    /// <summary>
+    /// Gets all quotes from an author
+    /// </summary>
+    /// <param name="serverId">Discord server to list quotes for</param>
+    /// <param name="author">Author to find quotes from</param>
+    /// <returns>All quotes found by the author, or an empty list if none were found</returns>
+    public async Task<IList<Quote>> GetQuotesByAuthorAsync(ulong serverId, string author)
+    {
+        return await _quoteCollection.AsQueryable().Where(q => q.ServerId == serverId && q.Author == author).ToListAsync();
     }
 
     /// <summary>

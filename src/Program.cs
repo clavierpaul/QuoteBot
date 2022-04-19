@@ -1,4 +1,9 @@
 ﻿using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.EventHandling;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,6 +37,22 @@ services.AddHttpClient<UploadService>();
 var slash = discordClient.UseSlashCommands(new SlashCommandsConfiguration
 {
     Services = services.BuildServiceProvider()
+});
+
+discordClient.UseInteractivity(new InteractivityConfiguration
+{
+    AckPaginationButtons = true,
+    ButtonBehavior = ButtonPaginationBehavior.DeleteButtons,
+    Timeout = TimeSpan.FromSeconds(30),
+    ResponseBehavior = InteractionResponseBehavior.Ack,
+    PaginationButtons = new PaginationButtons
+    {
+        Left = new DiscordButtonComponent(ButtonStyle.Secondary, "left", "Previous", emoji: new DiscordComponentEmoji("◀")),
+        Right = new DiscordButtonComponent(ButtonStyle.Secondary, "right", "Next", emoji: new DiscordComponentEmoji("▶")),
+        SkipLeft = new DiscordButtonComponent(ButtonStyle.Secondary, "first", "First", emoji: new DiscordComponentEmoji("⏮️")),
+        SkipRight = new DiscordButtonComponent(ButtonStyle.Secondary, "last", "Last", emoji: new DiscordComponentEmoji("⏭️")),
+        Stop = new DiscordButtonComponent(ButtonStyle.Secondary, "stop", "Cancel", emoji: new DiscordComponentEmoji("⏹️"))
+    }
 });
 
 #if DEBUG

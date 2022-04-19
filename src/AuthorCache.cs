@@ -10,7 +10,7 @@ public static class AuthorCache
 
     private static bool _initialized;
     
-    private static ILogger? _logger;
+    private static ILogger _logger = null!;
 
     /// <summary>
     /// Loads the authors from the database as well as setting the logger to use. Does nothing if the cache is already initialized.

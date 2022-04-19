@@ -1,4 +1,8 @@
+using System.Text;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.EventHandling;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 
 namespace QuoteBot.Services;
@@ -247,6 +251,155 @@ public class Commands : QuoteCommandGroup
             {
                 await ctx.CreateResponseAsync(CreateQuoteEmbed(quote));
             }
+        }
+    }
+
+    [SlashCommandGroup("listquotes", "List quotes")]
+    public class ListQuoteCommands : QuoteCommandGroup
+    {
+        public ListQuoteCommands(QuoteService quoteService) : base(quoteService)
+        {
+        }
+
+        public string CreateInlineQuote(Quote quote)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"\"{quote.Body}\"");
+            if (quote.Author != "")
+            {
+                sb.Append($" - {quote.Author}");
+            }
+            
+            if (quote.Name != "")
+            {
+                sb.Append($" ({quote.Name})");
+            }
+
+            sb.Append($" `(id: {quote.QuoteId})`");
+
+            return sb.ToString();
+        }
+
+        [SlashCommand("text", "List all text quotes in the server")]
+        public async Task GetAllTextQuotes(InteractionContext ctx)
+        {
+            var quotes = await QuoteService.GetTextQuotesAsync(ctx.Guild.Id);
+            
+            if (!quotes.Any())
+            {
+                await ctx.CreateResponseAsync(":x:  No quotes found.");
+                return;
+            }
+            
+            var pages = new List<Page>();
+            var totalPages = (int) Math.Ceiling((double) quotes.Count / 15);
+            
+            for (var i = 0; i < quotes.Count; i += 15)
+            {
+                var quotePage = quotes
+                    .Skip(i)
+                    .Take(15)
+                    .Select(CreateInlineQuote)
+                    .ToList();
+                
+                var quoteCount = (i + 1) * 15 > quotes.Count ? quotes.Count : (i + 1) * 15;
+
+                var embed = new DiscordEmbedBuilder()
+                    .WithTitle($"{ctx.Guild.Name} Quotes")
+                    .WithThumbnail(ctx.Guild.IconUrl)
+                    .WithDescription(string.Join("\n", quotePage))
+                    .WithFooter($"Page {pages.Count + 1}/{totalPages} • {quoteCount}/{quotes.Count} quotes")
+                    .WithColor(new DiscordColor("#3199d8"));
+                
+                pages.Add(new Page { Embed = embed });
+            }
+
+            await ctx.Interaction.SendPaginatedResponseAsync(false, ctx.User, pages);
+        }
+
+        [SlashCommand("image", "List all image quotes in the server")]
+        public async Task GetAllImageQuotes(InteractionContext ctx)
+        {
+            var images = await QuoteService.GetImageQuotesAsync(ctx.Guild.Id);
+            
+            if (!images.Any())
+            {
+                await ctx.CreateResponseAsync(":x:  No images found.");
+                return;
+            }
+
+            var pages = new List<Page>();
+            var i = 1;
+            
+            foreach (var image in images)
+            {
+                var embed = new DiscordEmbedBuilder()
+                    .WithTitle($"{ctx.Guild.Name} Images")
+                    .WithImageUrl(image.Body)
+                    .WithFooter($"id: {image.QuoteId} • {i}/{images.Count} images")
+                    .WithColor(new DiscordColor("#3199d8"));
+                
+                if (image.Author != "")
+                {
+                    embed.WithAuthor($"By {image.Author}");
+                }
+                
+                pages.Add(new Page { Embed = embed });
+                
+                i += 1;
+            }
+            
+            await ctx.Interaction.SendPaginatedResponseAsync(false, ctx.User, pages);
+        }
+
+        [SlashCommand("author", "List all quotes by a specific author")]
+        public async Task GetAllAuthorQuotes(InteractionContext ctx,
+            [Option("author", "Author to get quotes by")]
+            [Autocomplete(typeof(AuthorCompletionStrict))] 
+            string author)
+        {
+            if (author == "")
+            {
+                await ctx.CreateResponseAsync(":x:  No author specified!");
+                return;
+            }
+            
+            var quotes = await QuoteService.GetQuotesByAuthorAsync(ctx.Guild.Id, author);
+            
+            if (!quotes.Any())
+            {
+                await ctx.CreateResponseAsync($":x:  No quotes by {author} found.");
+                return;
+            }
+            
+            var pages = new List<Page>();
+            var i = 1;
+
+            foreach (var quote in quotes)
+            {
+                var embed = new DiscordEmbedBuilder()
+                    .WithTitle($"Quotes by {author}")
+                    .WithFooter($"id: {quote.QuoteId} • {i}/{quotes.Count} quotes")
+                    .WithColor(new DiscordColor("#3199d8"));
+                
+                switch (quote.Type)
+                {
+                    case QuoteType.Text:
+                        embed.WithDescription(quote.Body);
+                        break;
+                    case QuoteType.Image:
+                        embed.WithImageUrl(quote.Body);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException($"Invalid quote type {quote.Type}");
+                }
+                
+                pages.Add(new Page { Embed = embed });
+
+                i += 1;
+            }
+            
+            await ctx.Interaction.SendPaginatedResponseAsync(false, ctx.User, pages);
         }
     }
 }
