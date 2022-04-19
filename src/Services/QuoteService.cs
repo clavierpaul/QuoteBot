@@ -160,6 +160,26 @@ public class QuoteService
         
         return quotes[_random.Value!.Next(quotes.Count)];
     }
+    
+    /// <summary>
+    /// Get all text quotes for a server
+    /// </summary>
+    /// <param name="serverId">Discord server to list quotes for</param>
+    /// <returns>A list of all text quotes</returns>
+    public async Task<IList<Quote>> GetTextQuotesAsync(ulong serverId)
+    {
+        return await _quoteCollection.AsQueryable().Where(q => q.ServerId == serverId && q.Type == QuoteType.Text).ToListAsync();
+    }
+    
+    /// <summary>
+    /// Get all image quotes for a server
+    /// </summary>
+    /// <param name="serverId">Discord server to list quotes for</param>
+    /// <returns>A list of all image quotes</returns>
+    public async Task<IList<Quote>> GetImageQuotesAsync(ulong serverId)
+    {
+        return await _quoteCollection.AsQueryable().Where(q => q.ServerId == serverId && q.Type == QuoteType.Image).ToListAsync();
+    }
 
     /// <summary>
     /// Returns a random server quote from an author
