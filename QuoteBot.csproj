@@ -19,6 +19,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <Content Include=".github\workflows\build-image.yml" />
         <Content Include="config.yml">
             <CopyToOutputDirectory Condition="Exists('%(FullPath)')">PreserveNewest</CopyToOutputDirectory>
         </Content>
