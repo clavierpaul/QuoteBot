@@ -20,7 +20,7 @@
     
     <ItemGroup>
         <Content Include="config.yml">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory Condition="Exists('%(FullPath)')">PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
 

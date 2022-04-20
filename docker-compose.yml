@@ -1,0 +1,10 @@
+﻿version: "3.9"
+services:
+  quotebot:
+    build: .
+    secrets:
+      - bot_config
+secrets:
+  bot_config:
+    file: config.yml
+    

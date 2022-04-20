@@ -16,7 +16,11 @@ var configDeserializer = new DeserializerBuilder()
     .WithNamingConvention(CamelCaseNamingConvention.Instance)
     .Build();
 
+#if DEBUG
 var configPath = Path.Combine(AppContext.BaseDirectory, "config.yml");
+#else
+var configPath = "/run/secrets/bot_config";
+#endif
 var config = configDeserializer.Deserialize<Config>(File.ReadAllText(configPath));
 
 var discordClient = new DiscordClient(new DiscordConfiguration
