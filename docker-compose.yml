@@ -1,7 +1,7 @@
 ﻿version: "3.9"
 services:
   quotebot:
-    build: .
+    image: ghcr.io/clavierpaul/quotebot:latest
     secrets:
       - bot_config
 secrets:
